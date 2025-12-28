@@ -3,6 +3,7 @@ plugins {
 }
 
 android {
+    namespace 'com.example.vpn'  // <-- ОБЯЗАТЕЛЬНО
     compileSdk 33
 
     defaultConfig {
