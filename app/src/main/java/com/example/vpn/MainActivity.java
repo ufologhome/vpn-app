@@ -16,10 +16,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // исправленный id
         statusView = findViewById(R.id.status);
     }
 
+    // Кнопка ВКЛ
     public void startVpn(View v) {
         Intent intent = VpnService.prepare(this);
         if (intent != null) {
@@ -29,11 +29,13 @@ public class MainActivity extends Activity {
         }
     }
 
+    // Кнопка ВЫКЛ
     public void stopVpn(View v) {
         stopService(new Intent(this, MyVpnService.class));
         setStatus("🔴 VPN остановлен");
     }
 
+    // Статус VPN
     public static void setStatus(String s) {
         if (statusView != null) {
             statusView.setText(s);
