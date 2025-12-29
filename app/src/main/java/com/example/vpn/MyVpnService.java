@@ -16,7 +16,6 @@ public class MyVpnService extends VpnService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        // 🔒 НЕ даём запускаться повторно
         if (tunnelThread != null && tunnelThread.isAlive()) {
             Log.i(TAG, "VPN уже запущен — игнор");
             return START_STICKY;
@@ -24,8 +23,8 @@ public class MyVpnService extends VpnService {
 
         Builder builder = new Builder();
         builder.setSession("WG-Lite")
-                .addAddress("10.0.0.2", 32)
-                .addRoute("0.0.0.0", 0);
+               .addAddress("10.0.0.2", 32)
+               .addRoute("0.0.0.0", 0);
 
         tun = builder.establish();
         if (tun == null) {
@@ -52,9 +51,7 @@ public class MyVpnService extends VpnService {
         }
 
         if (tun != null) {
-            try {
-                tun.close();
-            } catch (Exception ignored) {}
+            try { tun.close(); } catch (Exception ignored) {}
             tun = null;
         }
 
