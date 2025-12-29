@@ -14,18 +14,8 @@
         android:layout_height="wrap_content"/>
 
     <Button
-        android:id="@+id/btn_on"
-        android:text="ВКЛ"
-        android:onClick="startVpn"
+        android:id="@+id/startVpn"
+        android:text="Включить VPN"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"/>
-
-    <Button
-        android:id="@+id/btn_off"
-        android:text="ВЫКЛ"
-        android:onClick="stopVpn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"/>
+        android:layout_height="wrap_content"/>
 </LinearLayout>
