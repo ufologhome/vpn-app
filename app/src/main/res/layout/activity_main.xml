@@ -16,11 +16,16 @@
     <Button
         android:id="@+id/btn_on"
         android:text="ВКЛ"
-        android:onClick="startVpn" />
+        android:onClick="startVpn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"/>
 
     <Button
         android:id="@+id/btn_off"
         android:text="ВЫКЛ"
-        android:onClick="stopVpn" />
-
+        android:onClick="stopVpn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"/>
 </LinearLayout>
