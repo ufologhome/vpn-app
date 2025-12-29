@@ -11,7 +11,7 @@ public class MainActivity extends Activity {
 
     private static TextView statusView;
 
-    // Метод для обновления статуса с любого потока
+    // Обновление статуса из любого потока
     public static void setStatus(String status) {
         if (statusView != null) {
             statusView.post(() -> statusView.setText("Статус: " + status));
@@ -31,15 +31,13 @@ public class MainActivity extends Activity {
     public void startVpn(View v) {
         Intent intent = VpnService.prepare(this);
         if (intent != null) {
-            // Показываем экран разрешения VPN
             startActivityForResult(intent, 1);
         } else {
-            // Разрешение уже есть
             startService(new Intent(this, MyVpnService.class));
         }
     }
 
-    // Обработка результата разрешения VPN
+    // Обработка разрешения VPN
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
