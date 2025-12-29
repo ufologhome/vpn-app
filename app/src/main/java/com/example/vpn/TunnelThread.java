@@ -17,7 +17,7 @@ public class TunnelThread implements Runnable {
         try {
             MainActivity.setStatus("Подключение к серверу...");
 
-            Socket socket = new Socket("192.168.1.150", 9000);
+            Socket socket = new Socket("192.168.0.150", 9000);
             OutputStream out = socket.getOutputStream();
 
             out.write("HELLO_FROM_ANDROID\n".getBytes());
