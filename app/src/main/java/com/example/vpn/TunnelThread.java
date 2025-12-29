@@ -1,9 +1,6 @@
 package com.example.vpn;
 
 import android.util.Log;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -14,12 +11,7 @@ public class TunnelThread implements Runnable {
     private static final String SERVER_IP = "192.168.0.150"; // IP Go сервера
     private static final int SERVER_PORT = 9000;
 
-    private final FileDescriptor tunFd;
     private volatile boolean running = true;
-
-    public TunnelThread(FileDescriptor fd) {
-        this.tunFd = fd;
-    }
 
     public void stop() {
         running = false;
@@ -30,7 +22,6 @@ public class TunnelThread implements Runnable {
         try {
             MainActivity.setStatus("Подключение к Go серверу…");
 
-            // Для теста можно сразу без TUN
             DatagramSocket udp = new DatagramSocket();
             udp.connect(InetAddress.getByName(SERVER_IP), SERVER_PORT);
 
