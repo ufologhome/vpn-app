@@ -9,10 +9,12 @@ public class TunnelThread implements Runnable {
 
     private static final String TAG = "VPN";
     private volatile boolean running = true;
-    private static final String SERVER_IP = "192.168.0.150";
+    private static final String SERVER_IP = "192.168.0.150"; // IP Go сервера
     private static final int SERVER_PORT = 9000;
 
-    public void stop() { running = false; }
+    public void stop() {
+        running = false;
+    }
 
     @Override
     public void run() {
@@ -22,7 +24,8 @@ public class TunnelThread implements Runnable {
             DatagramSocket udp = new DatagramSocket();
             udp.connect(InetAddress.getByName(SERVER_IP), SERVER_PORT);
 
-            byte[] hello = "HELLO_FROM_ANDROID".getBytes();
+            // handshake
+            byte[] hello = "HELLO".getBytes();
             udp.send(new DatagramPacket(hello, hello.length));
 
             byte[] buf = new byte[1024];
@@ -36,11 +39,11 @@ public class TunnelThread implements Runnable {
                 MainActivity.setStatus("🔴 Ошибка соединения");
             }
 
+            // PING loop
             while (running) {
                 byte[] ping = "PING".getBytes();
                 udp.send(new DatagramPacket(ping, ping.length));
-                DatagramPacket pong = new DatagramPacket(buf, buf.length);
-                udp.receive(pong);
+                udp.receive(resp);
 
                 Thread.sleep(3000);
             }
