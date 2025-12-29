@@ -11,16 +11,14 @@
         android:text="Статус: ожидание"
         android:textSize="18sp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="16dp"/>
+        android:layout_height="wrap_content"/>
 
     <Button
         android:id="@+id/btn_on"
         android:text="ВКЛ"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="startVpn"
-        android:layout_marginBottom="8dp"/>
+        android:onClick="startVpn"/>
 
     <Button
         android:id="@+id/btn_off"
@@ -28,5 +26,4 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="stopVpn"/>
-
 </LinearLayout>
