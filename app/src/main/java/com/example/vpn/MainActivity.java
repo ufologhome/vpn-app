@@ -11,17 +11,17 @@ public class MainActivity extends Activity {
 
     private static TextView statusView;
 
+    public static void setStatus(String status) {
+        if (statusView != null) {
+            statusView.post(() -> statusView.setText("Статус: " + status));
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         statusView = findViewById(R.id.status);
-    }
-
-    public static void setStatus(final String status) {
-        if (statusView != null) {
-            statusView.post(() -> statusView.setText("Статус: " + status));
-        }
     }
 
     public void startVpn(View v) {
@@ -35,13 +35,5 @@ public class MainActivity extends Activity {
 
     public void stopVpn(View v) {
         stopService(new Intent(this, MyVpnService.class));
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            startService(new Intent(this, MyVpnService.class));
-        }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 }
