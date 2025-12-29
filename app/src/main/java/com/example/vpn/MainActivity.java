@@ -4,8 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
+import android.view.View;
 
 public class MainActivity extends Activity {
 
@@ -15,11 +15,15 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         statusView = findViewById(R.id.status);
     }
 
-    // Кнопка ВКЛ
+    public static void setStatus(final String status) {
+        if (statusView != null) {
+            statusView.post(() -> statusView.setText("Статус: " + status));
+        }
+    }
+
     public void startVpn(View v) {
         Intent intent = VpnService.prepare(this);
         if (intent != null) {
@@ -29,16 +33,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Кнопка ВЫКЛ
     public void stopVpn(View v) {
         stopService(new Intent(this, MyVpnService.class));
-        setStatus("🔴 VPN остановлен");
     }
 
-    // Статус VPN
-    public static void setStatus(String s) {
-        if (statusView != null) {
-            statusView.setText(s);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 1 && resultCode == RESULT_OK) {
+            startService(new Intent(this, MyVpnService.class));
         }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }
