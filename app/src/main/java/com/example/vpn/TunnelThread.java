@@ -3,6 +3,8 @@ package com.example.vpn;
 import android.util.Log;
 
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -11,13 +13,11 @@ public class TunnelThread implements Runnable {
 
     private static final String TAG = "VPN";
 
-    private static final String SERVER_IP = "192.168.0.150";
+    private static final String SERVER_IP = "192.168.0.150"; // твой Go сервер
     private static final int SERVER_PORT = 9000;
 
-    private final FileDescriptor tunFd; // пока НЕ используется
+    private final FileDescriptor tunFd;
     private volatile boolean running = true;
-
-    private DatagramSocket udp;
 
     public TunnelThread(FileDescriptor fd) {
         this.tunFd = fd;
@@ -25,64 +25,63 @@ public class TunnelThread implements Runnable {
 
     public void stop() {
         running = false;
-        if (udp != null) {
-            udp.close();
-        }
     }
 
     @Override
     public void run() {
         try {
-            MainActivity.setStatus("Подключение к серверу…");
+            MainActivity.setStatus("Подключение к Go серверу…");
 
-            udp = new DatagramSocket();
-            udp.connect(
-                    InetAddress.getByName(SERVER_IP),
-                    SERVER_PORT
-            );
+            FileInputStream tunIn = new FileInputStream(tunFd);
+            FileOutputStream tunOut = new FileOutputStream(tunFd);
 
-            // таймаут, чтобы поток не зависал
-            udp.setSoTimeout(3000);
+            DatagramSocket udp = new DatagramSocket();
+            udp.connect(InetAddress.getByName(SERVER_IP), SERVER_PORT);
 
-            // === HANDSHAKE ===
-            send("HELLO");
-            MainActivity.setStatus("🟡 Ожидание ответа сервера…");
+            // handshake
+            byte[] hello = "HELLO_FROM_ANDROID".getBytes();
+            udp.send(new DatagramPacket(hello, hello.length));
 
-            String resp = receive();
-            if (!"OK".equals(resp)) {
-                throw new RuntimeException("Неверный ответ сервера: " + resp);
-            }
+            MainActivity.setStatus("🟢 VPN активен (UDP)");
 
-            MainActivity.setStatus("🟢 VPN подключён");
-            Log.i(TAG, "Handshake OK");
+            byte[] buffer = new byte[32767];
 
-            // === KEEPALIVE ===
             while (running) {
-                send("PING");
-                Log.d(TAG, "PING → server");
-                Thread.sleep(2000);
+                int len = tunIn.read(buffer);
+                if (len > 0) {
+                    logPacket(buffer, len);
+
+                    // → Go
+                    udp.send(new DatagramPacket(buffer, len));
+
+                    // ← Go
+                    DatagramPacket resp = new DatagramPacket(buffer, buffer.length);
+                    udp.receive(resp);
+
+                    tunOut.write(resp.getData(), 0, resp.getLength());
+                }
             }
+
+            udp.close();
 
         } catch (Exception e) {
-            Log.e(TAG, "VPN error", e);
-            MainActivity.setStatus("🔴 VPN отключён");
-        } finally {
-            if (udp != null) {
-                udp.close();
-            }
+            MainActivity.setStatus("🔴 VPN остановлен");
+            Log.e(TAG, "Tunnel error", e);
         }
     }
 
-    private void send(String msg) throws Exception {
-        byte[] data = msg.getBytes();
-        DatagramPacket p = new DatagramPacket(data, data.length);
-        udp.send(p);
-    }
+    private void logPacket(byte[] packet, int len) {
+        if (len < 20) return;
 
-    private String receive() throws Exception {
-        byte[] buf = new byte[64];
-        DatagramPacket p = new DatagramPacket(buf, buf.length);
-        udp.receive(p);
-        return new String(p.getData(), 0, p.getLength());
+        int proto = packet[9] & 0xFF;
+        String p = proto == 6 ? "TCP" : proto == 17 ? "UDP" : "OTHER";
+
+        String dst =
+                (packet[16] & 0xFF) + "." +
+                (packet[17] & 0xFF) + "." +
+                (packet[18] & 0xFF) + "." +
+                (packet[19] & 0xFF);
+
+        Log.i(TAG, "📦 TUN → " + dst + " proto=" + p + " bytes=" + len);
     }
 }
