@@ -23,7 +23,6 @@ public class MyVpnService extends VpnService {
 
         MainActivity.setStatus("VPN запущен");
 
-        // создаём Runnable и запускаем Thread
         tunnelRunnable = new TunnelThread(tun.getFileDescriptor());
         thread = new Thread(tunnelRunnable);
         thread.start();
@@ -35,12 +34,7 @@ public class MyVpnService extends VpnService {
     public void onDestroy() {
         super.onDestroy();
 
-        // останавливаем TunnelThread
-        if (tunnelRunnable != null) {
-            tunnelRunnable.stop();
-        }
-
-        // закрываем туннель
+        if (tunnelRunnable != null) tunnelRunnable.stop();
         try {
             if (tun != null) tun.close();
         } catch (Exception ignored) {}
