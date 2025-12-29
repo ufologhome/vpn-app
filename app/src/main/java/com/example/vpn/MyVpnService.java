@@ -7,7 +7,8 @@ import android.os.ParcelFileDescriptor;
 public class MyVpnService extends VpnService {
 
     private ParcelFileDescriptor tun;
-    private Thread tunnelThread;
+    private Thread thread;
+    private TunnelThread tunnelRunnable;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -22,8 +23,10 @@ public class MyVpnService extends VpnService {
 
         MainActivity.setStatus("VPN запущен");
 
-        tunnelThread = new Thread(new TunnelThread(tun.getFileDescriptor()));
-        tunnelThread.start();
+        // создаём Runnable и запускаем Thread
+        tunnelRunnable = new TunnelThread(tun.getFileDescriptor());
+        thread = new Thread(tunnelRunnable);
+        thread.start();
 
         return START_STICKY;
     }
@@ -31,12 +34,17 @@ public class MyVpnService extends VpnService {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (tunnelThread != null) {
-            ((TunnelThread) tunnelThread).stop();
+
+        // останавливаем TunnelThread
+        if (tunnelRunnable != null) {
+            tunnelRunnable.stop();
         }
+
+        // закрываем туннель
         try {
             if (tun != null) tun.close();
         } catch (Exception ignored) {}
+
         MainActivity.setStatus("VPN остановлен");
     }
 }
