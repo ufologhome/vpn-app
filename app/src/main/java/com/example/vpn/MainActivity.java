@@ -1,46 +1,40 @@
 package com.example.vpn;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
-    private static final int VPN_REQUEST_CODE = 0x0F;
+    TextView status;
+    static TextView staticStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button btnOn = findViewById(R.id.btn_on);
-        Button btnOff = findViewById(R.id.btn_off);
+        status = findViewById(R.id.status);
+        staticStatus = status;
 
-        btnOn.setOnClickListener(v -> {
-            Intent intent = VpnService.prepare(MainActivity.this);
+        Button start = findViewById(R.id.startVpn);
+
+        start.setOnClickListener(v -> {
+            Intent intent = VpnService.prepare(this);
             if (intent != null) {
-                startActivityForResult(intent, VPN_REQUEST_CODE);
+                startActivityForResult(intent, 1);
             } else {
-                startVpnService();
+                startService(new Intent(this, MyVpnService.class));
             }
         });
-
-        btnOff.setOnClickListener(v -> stopService(new Intent(MainActivity.this, MyVpnService.class)));
     }
 
-    private void startVpnService() {
-        Intent intent = new Intent(this, MyVpnService.class);
-        startService(intent);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == VPN_REQUEST_CODE && resultCode == RESULT_OK) {
-            startVpnService();
+    public static void setStatus(String text) {
+        if (staticStatus != null) {
+            staticStatus.post(() -> staticStatus.setText(text));
         }
-        super.onActivityResult(requestCode, resultCode, data);
     }
 }
