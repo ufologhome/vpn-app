@@ -1,38 +1,87 @@
 package com.example.vpn;
 
+import android.util.Log;
+
 import java.io.FileDescriptor;
-import java.net.Socket;
-import java.io.OutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class TunnelThread implements Runnable {
 
-    FileDescriptor tunFd;
+    private static final String TAG = "VPN";
+
+    private static final String SERVER_IP = "192.168.0.150";
+    private static final int SERVER_PORT = 9000;
+
+    private final FileDescriptor tunFd;
+    private volatile boolean running = true;
 
     public TunnelThread(FileDescriptor fd) {
         this.tunFd = fd;
     }
 
+    public void stop() {
+        running = false;
+    }
+
     @Override
     public void run() {
         try {
-            MainActivity.setStatus("Подключение к серверу...");
+            MainActivity.setStatus("Подключение к Go серверу…");
 
-            Socket socket = new Socket("192.168.0.150", 9000);
-            OutputStream out = socket.getOutputStream();
+            FileInputStream tunIn = new FileInputStream(tunFd);
+            FileOutputStream tunOut = new FileOutputStream(tunFd);
 
-            out.write("HELLO_FROM_ANDROID\n".getBytes());
-            out.flush();
+            DatagramSocket udp = new DatagramSocket();
+            udp.connect(InetAddress.getByName(SERVER_IP), SERVER_PORT);
 
-            MainActivity.setStatus("🟢 Соединено с Go сервером");
+            // handshake
+            byte[] hello = "HELLO_FROM_ANDROID".getBytes();
+            udp.send(new DatagramPacket(hello, hello.length));
 
-            // держим соединение
-            while (true) {
-                Thread.sleep(1000);
+            MainActivity.setStatus("🟢 VPN активен (UDP)");
+
+            byte[] buffer = new byte[32767];
+
+            while (running) {
+                int len = tunIn.read(buffer);
+                if (len > 0) {
+                    logPacket(buffer, len);
+
+                    // → Go
+                    udp.send(new DatagramPacket(buffer, len));
+
+                    // ← Go
+                    DatagramPacket resp = new DatagramPacket(buffer, buffer.length);
+                    udp.receive(resp);
+
+                    tunOut.write(resp.getData(), 0, resp.getLength());
+                }
             }
 
+            udp.close();
+
         } catch (Exception e) {
-            MainActivity.setStatus("🔴 Нет соединения с сервером");
-            e.printStackTrace();
+            MainActivity.setStatus("🔴 VPN остановлен");
+            Log.e(TAG, "Tunnel error", e);
         }
+    }
+
+    private void logPacket(byte[] packet, int len) {
+        if (len < 20) return;
+
+        int proto = packet[9] & 0xFF;
+        String p = proto == 6 ? "TCP" : proto == 17 ? "UDP" : "OTHER";
+
+        String dst =
+                (packet[16] & 0xFF) + "." +
+                (packet[17] & 0xFF) + "." +
+                (packet[18] & 0xFF) + "." +
+                (packet[19] & 0xFF);
+
+        Log.i(TAG, "📦 TUN → " + dst + " proto=" + p + " bytes=" + len);
     }
 }
