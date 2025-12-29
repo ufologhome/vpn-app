@@ -1,44 +1,36 @@
 package com.example.vpn;
 
-import android.net.VpnService;
+import android.app.Service;
 import android.content.Intent;
-import android.os.ParcelFileDescriptor;
+import android.os.IBinder;
 
-public class MyVpnService extends VpnService {
+public class MyVpnService extends Service {
 
-    private ParcelFileDescriptor tun;
-    private Thread thread;
+    private Thread tunnelThread;
     private TunnelThread tunnelRunnable;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-        Builder builder = new Builder();
-        builder.setSession("WG-Lite")
-                .addAddress("10.0.0.2", 32)
-                .addRoute("0.0.0.0", 0);
-
-        tun = builder.establish();
-        if (tun == null) return START_NOT_STICKY;
-
-        MainActivity.setStatus("VPN запущен");
-
-        tunnelRunnable = new TunnelThread(tun.getFileDescriptor());
-        thread = new Thread(tunnelRunnable);
-        thread.start();
+        tunnelRunnable = new TunnelThread();
+        tunnelThread = new Thread(tunnelRunnable);
+        tunnelThread.start();
 
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-
         if (tunnelRunnable != null) tunnelRunnable.stop();
-        try {
-            if (tun != null) tun.close();
-        } catch (Exception ignored) {}
+        tunnelRunnable = null;
+        tunnelThread = null;
 
         MainActivity.setStatus("VPN остановлен");
+
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 }
