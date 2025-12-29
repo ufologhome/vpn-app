@@ -1,56 +1,40 @@
 package com.example.vpn;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.net.VpnService;
 import android.os.Bundle;
-import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
-    private static TextView statusView;
-
-    // Обновление статуса из любого потока
-    public static void setStatus(String status) {
-        if (statusView != null) {
-            statusView.post(() -> statusView.setText("Статус: " + status));
-        }
-    }
+    TextView status;
+    static TextView staticStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        statusView = findViewById(R.id.status);
-        statusView.setText("Статус: ожидание");
+        status = findViewById(R.id.status);
+        staticStatus = status;
+
+        Button start = findViewById(R.id.startVpn);
+
+        start.setOnClickListener(v -> {
+            Intent intent = VpnService.prepare(this);
+            if (intent != null) {
+                startActivityForResult(intent, 1);
+            } else {
+                startService(new Intent(this, MyVpnService.class));
+            }
+        });
     }
 
-    // Кнопка ВКЛ
-    public void startVpn(View v) {
-        Intent intent = VpnService.prepare(this);
-        if (intent != null) {
-            startActivityForResult(intent, 1);
-        } else {
-            startService(new Intent(this, MyVpnService.class));
+    public static void setStatus(String text) {
+        if (staticStatus != null) {
+            staticStatus.post(() -> staticStatus.setText(text));
         }
-    }
-
-    // Обработка разрешения VPN
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            startService(new Intent(this, MyVpnService.class));
-        } else {
-            setStatus("❌ VPN не разрешён пользователем");
-        }
-    }
-
-    // Кнопка ВЫКЛ
-    public void stopVpn(View v) {
-        stopService(new Intent(this, MyVpnService.class));
-        setStatus("VPN остановлен");
     }
 }
