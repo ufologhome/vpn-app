@@ -1,16 +1,22 @@
 package com.example.vpn;
 
-import android.app.Service;
+import android.net.VpnService;
 import android.content.Intent;
-import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
 
-public class MyVpnService extends Service {
+public class MyVpnService extends VpnService {
 
     private Thread tunnelThread;
     private TunnelThread tunnelRunnable;
+    private ParcelFileDescriptor tun;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
+        Builder builder = new Builder();
+        builder.setSession("UDP-Tunnel");
+        tun = builder.establish();
+
         tunnelRunnable = new TunnelThread();
         tunnelThread = new Thread(tunnelRunnable);
         tunnelThread.start();
@@ -24,13 +30,9 @@ public class MyVpnService extends Service {
         tunnelRunnable = null;
         tunnelThread = null;
 
+        try { if (tun != null) tun.close(); } catch (Exception ignored) {}
+
         MainActivity.setStatus("VPN остановлен");
-
         super.onDestroy();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
     }
 }
