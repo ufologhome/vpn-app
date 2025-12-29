@@ -1,46 +1,37 @@
 package com.example.vpn;
 
 import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.Socket;
+import java.io.OutputStream;
 
-public class TunnelThread extends Thread {
+public class TunnelThread implements Runnable {
 
-    private final FileDescriptor vpnFd;
-    private boolean running = true;
-
-    private final String SERVER_IP = "192.168.0.150"; // твой Go-сервер
-    private final int SERVER_PORT = 9000;
+    FileDescriptor tunFd;
 
     public TunnelThread(FileDescriptor fd) {
-        this.vpnFd = fd;
+        this.tunFd = fd;
     }
 
     @Override
     public void run() {
-        try (FileInputStream in = new FileInputStream(vpnFd);
-             FileOutputStream out = new FileOutputStream(vpnFd);
-             DatagramSocket socket = new DatagramSocket()) {
+        try {
+            MainActivity.setStatus("Подключение к серверу...");
 
-            InetAddress serverAddress = InetAddress.getByName(SERVER_IP);
-            byte[] buffer = new byte[1500];
+            Socket socket = new Socket("192.168.0.150", 9000);
+            OutputStream out = socket.getOutputStream();
 
-            while (!Thread.currentThread().isInterrupted() && running) {
-                int length = in.read(buffer);
-                if (length > 0) {
-                    DatagramPacket packet = new DatagramPacket(buffer, length, serverAddress, SERVER_PORT);
-                    socket.send(packet);
-                }
+            out.write("HELLO_FROM_ANDROID\n".getBytes());
+            out.flush();
 
-                DatagramPacket response = new DatagramPacket(buffer, buffer.length);
-                socket.receive(response);
-                out.write(response.getData(), 0, response.getLength());
+            MainActivity.setStatus("🟢 Соединено с Go сервером");
+
+            // держим соединение
+            while (true) {
+                Thread.sleep(1000);
             }
 
         } catch (Exception e) {
+            MainActivity.setStatus("🔴 Нет соединения с сервером");
             e.printStackTrace();
         }
     }
