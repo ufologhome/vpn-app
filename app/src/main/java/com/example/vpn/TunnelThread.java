@@ -30,9 +30,7 @@ public class TunnelThread implements Runnable {
         try {
             MainActivity.setStatus("Подключение к Go серверу…");
 
-            FileInputStream tunIn = new FileInputStream(tunFd);
-            FileOutputStream tunOut = new FileOutputStream(tunFd);
-
+            // Для теста можно сразу без TUN
             DatagramSocket udp = new DatagramSocket();
             udp.connect(InetAddress.getByName(SERVER_IP), SERVER_PORT);
 
@@ -40,7 +38,7 @@ public class TunnelThread implements Runnable {
             byte[] hello = "HELLO_FROM_ANDROID".getBytes();
             udp.send(new DatagramPacket(hello, hello.length));
 
-            // ждём ответ от Go
+            // ждём OK
             byte[] buffer = new byte[1024];
             DatagramPacket resp = new DatagramPacket(buffer, buffer.length);
             udp.receive(resp);
@@ -52,17 +50,20 @@ public class TunnelThread implements Runnable {
                 MainActivity.setStatus("🔴 Нет соединения с сервером");
             }
 
-            // ПИНГ в цикле для поддержки соединения
+            // keep-alive PING
             while (running) {
                 byte[] ping = "PING".getBytes();
                 udp.send(new DatagramPacket(ping, ping.length));
 
                 DatagramPacket pong = new DatagramPacket(buffer, buffer.length);
                 udp.receive(pong);
+
                 Thread.sleep(3000);
             }
 
             udp.close();
+            MainActivity.setStatus("VPN остановлен");
+
         } catch (Exception e) {
             MainActivity.setStatus("🔴 VPN остановлен");
             Log.e(TAG, "Tunnel error", e);
