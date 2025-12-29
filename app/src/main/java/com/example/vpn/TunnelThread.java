@@ -12,7 +12,7 @@ public class TunnelThread extends Thread {
     private final FileDescriptor vpnFd;
     private boolean running = true;
 
-    private final String SERVER_IP = "192.168.1.150"; // твой Go-сервер
+    private final String SERVER_IP = "192.168.0.150"; // твой Go-сервер
     private final int SERVER_PORT = 9000;
 
     public TunnelThread(FileDescriptor fd) {
