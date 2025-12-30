@@ -1,12 +1,13 @@
 package com.example.vpn;
 
 import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.Socket;
-import java.io.OutputStream;
 
 public class TunnelThread implements Runnable {
 
-    FileDescriptor tunFd;
+    private final FileDescriptor tunFd;
 
     public TunnelThread(FileDescriptor fd) {
         this.tunFd = fd;
@@ -15,23 +16,30 @@ public class TunnelThread implements Runnable {
     @Override
     public void run() {
         try {
-            MainActivity.setStatus("Подключение к серверу...");
+            MainActivity.setStatus("Подключение к Go серверу...");
 
-            Socket socket = new Socket("192.168.0.150", 9000);
-            OutputStream out = socket.getOutputStream();
+            FileInputStream tunIn = new FileInputStream(tunFd);
+            FileOutputStream tunOut = new FileOutputStream(tunFd);
 
-            out.write("HELLO_FROM_ANDROID\n".getBytes());
-            out.flush();
+            Socket sock = new Socket("192.168.0.150", 9000);
 
-            MainActivity.setStatus("🟢 Соединено с Go сервером");
+            MainActivity.setStatus("🟢 Подключено к Go");
 
-            // держим соединение
-            while (true) {
-                Thread.sleep(1000);
+            byte[] buf = new byte[32767];
+
+            while (!Thread.interrupted()) {
+                int n = tunIn.read(buf);
+                if (n > 0) {
+                    sock.getOutputStream().write(buf, 0, n);
+                    int r = sock.getInputStream().read(buf);
+                    if (r > 0) {
+                        tunOut.write(buf, 0, r);
+                    }
+                }
             }
 
         } catch (Exception e) {
-            MainActivity.setStatus("🔴 Нет соединения с сервером");
+            MainActivity.setStatus("🔴 VPN остановлен");
             e.printStackTrace();
         }
     }
