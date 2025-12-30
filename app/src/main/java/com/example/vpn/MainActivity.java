@@ -9,8 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView status;
-    static TextView staticStatus;
+    static TextView status;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,11 +17,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         status = findViewById(R.id.status);
-        staticStatus = status;
 
-        Button start = findViewById(R.id.startVpn);
-
-        start.setOnClickListener(v -> {
+        Button btn = findViewById(R.id.startVpn);
+        btn.setOnClickListener(v -> {
             Intent intent = VpnService.prepare(this);
             if (intent != null) {
                 startActivityForResult(intent, 1);
@@ -32,9 +29,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public static void setStatus(String text) {
-        if (staticStatus != null) {
-            staticStatus.post(() -> staticStatus.setText(text));
+    public static void setStatus(String s) {
+        if (status != null) {
+            status.post(() -> status.setText(s));
         }
     }
 }
